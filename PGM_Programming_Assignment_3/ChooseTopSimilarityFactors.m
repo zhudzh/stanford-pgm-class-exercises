@@ -23,7 +23,12 @@ if (length(allFactors) <= F)
 end
 
 % Your code here:
-factors = allFactors; %%% REMOVE THIS LINE
-
+n = length(allFactors);
+scores = ones(1, n);
+for i=1:n,
+    scores(i) = allFactors(i).val(1);
+end
+[ss, order] = sort(scores);
+factors = allFactors(order([n-1,n]));
 end
 

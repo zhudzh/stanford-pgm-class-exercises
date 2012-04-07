@@ -29,3 +29,4 @@ for i=1:n,
     factors(i).card = [imageModel.K];
     factors(i).val = ComputeImageFactor(images(i).img, imageModel);
 end
+end
