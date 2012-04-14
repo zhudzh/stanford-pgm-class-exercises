@@ -25,6 +25,9 @@ A = [];
 % YOUR CODE HERE
 % Compute the best assignment for variables in the network.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+A = zeros(1,length(M));
+for i=1:length(M),
+    [item, index] = max(M(i).val);
+    A(M(i).var(1)) = index;
 end
 

@@ -37,13 +37,22 @@ end;
 
 % initialization
 % you should set them to the correct values in your code
-B.card = [];
-B.val = [];
+B.card = A.card(mapB);
+B.val = zeros(1,prod(B.card));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % YOUR CODE HERE
 % Correctly set up and populate the factor values of B
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+assignments = IndexToAssignment(1:length(A.val), A.card);
+indxB = AssignmentToIndex(assignments(:, mapB), B.card);
+for i = 1:length(A.val),
+    if (B.val(indxB(i)) == 0),
+        B.val(indxB(i)) = A.val(i);
+    else
+        B.val(indxB(i)) = max(B.val(indxB(i)), A.val(i));
+    end
+end;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 end

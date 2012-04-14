@@ -39,7 +39,40 @@ P.edges = zeros(N);
 % Print out C to get a better understanding of its structure.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
+M = length(C.factorList);
+selected = zeros(M);
+for i=1:N,
+    initFactor = true;
+    f = struct('var', [], 'card', [], 'val', []);
+    P.cliqueList(i).var = C.nodes{i};
+    for j=1:M,
+        if (ismember(C.factorList(j).var, C.nodes{i}) && not(selected(j))),
+            if(initFactor),
+                f = C.factorList(j);
+                initFactor = false;
+            else
+                f = FactorProduct(f, C.factorList(j));
+            end
+            selected(j) = 1;
+        end
+    end
+    P.cliqueList(i) = ReorderFactorVariables(f);
+end
+P.edges = C.edges;
 end
 
+
+function out = ReorderFactorVariables(in) 
+% Function accepts a factor and reorders the factor variables
+% such that they are in ascending order
+
+[S, I] = sort(in.var);
+
+out.var = S;
+out.card = in.card(I);
+
+allAssignmentsIn = IndexToAssignment(1:prod(in.card), in.card);
+allAssignmentsOut = allAssignmentsIn(:,I); % Map from in assgn to out assgn
+out.val(AssignmentToIndex(allAssignmentsOut, out.card)) = in.val;
+
+end

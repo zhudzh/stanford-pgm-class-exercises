@@ -33,7 +33,31 @@ j = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % YOUR CODE HERE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
+size = length(P.cliqueList);
+mm = zeros(size,size);
+for m=1:size,
+    for n=1:size,
+        if (length(messages(m,n).var)!=0)
+            mm(m,n)=1;
+        end
+    end
+end
+noExistingMessages = P.edges .- mm;
+for m = 1:size,
+    found = false;
+    for n = 1:size,
+        neighbors = noExistingMessages(:,m);
+        neighbors(n) = 0;
+        if(P.edges(m,n) == 1 && neighbors == false && not(mm(m,n))),
+            i = m;
+            j = n;
+            found = true;
+            break
+        end
+    end
+    if (found),
+        break;
+    end
+end
 
 return;
