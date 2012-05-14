@@ -32,8 +32,16 @@ P.clg = repmat(struct('mu_y', zeros(1,K), 'mu_x', zeros(1,K), 'mu_angle', zeros(
                       'sigma_y', zeros(1,K), 'sigma_x', zeros(1,K), 'sigma_angle', ...
                       zeros(1,K), 'theta', []), 1, size(dataset, 2));
 for i = 1:size(dataset,2),
-    if(G(i,1) == 0),
-        for j = 1:K
+    for j=1:K
+        if (length(size(G)) == 3),
+        hasparent = G(i,1,j) == 0;
+        parent = G(i,2, j);
+    else
+        hasparent = G(i,1) == 0;
+        parent = G(i,2);
+    end
+
+        if(hasparent),
             data = dataset(find(labels(:, j)), :, :);
             [P.clg(i).mu_y(j), P.clg(i).sigma_y(j)] = ...
                 FitGaussianParameters(data(:, i, 1));
@@ -41,11 +49,9 @@ for i = 1:size(dataset,2),
                 FitGaussianParameters(data(:, i, 2));
             [P.clg(i).mu_angle(j), P.clg(i).sigma_angle(j)] = ...
                 FitGaussianParameters(data(:, i, 3));
-        end
-    else
-        for j = 1:K
+    
+        else
             data = dataset(find(labels(:, j)), :, :);
-            parent = G(i, 2);
             parentvalues = squeeze(data(:, parent, :));
             [beta1, P.clg(i).sigma_y(j)] = ...
                 FitLinearGaussianParameters(data(:, i, 1), ...
@@ -59,10 +65,10 @@ for i = 1:size(dataset,2),
                 FitLinearGaussianParameters(data(:, i, 3), ...
                                             parentvalues);
             P.clg(i).theta(j, 9:12) = [beta3'(1,4) beta3'(1,1:3)];
+            P.clg(i).mu_y = [];
+            P.clg(i).mu_x = [];
+            P.clg(i).mu_angle = [];
         end
-        P.clg(i).mu_y = [];
-        P.clg(i).mu_x = [];
-        P.clg(i).mu_angle = [];
     end
 end
 loglikelihood = ComputeLogLikelihood(P, G, dataset);

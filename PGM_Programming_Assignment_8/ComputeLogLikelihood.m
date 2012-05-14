@@ -1,4 +1,4 @@
-function loglikelihood = ComputeLogLikelihood(P, G, dataset)
+function [loglikelihood, llperlabel] = ComputeLogLikelihood(P, G, dataset)
 % returns the (natural) log-likelihood of data given the model and graph structure
 %
 % Inputs:
@@ -27,73 +27,49 @@ loglikelihood = 0;
 %       space, sum(Prob).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % YOUR CODE HERE
-llGivenK = zeros(1, K);
+llperlabel = zeros(N, K);
 logPrior = log(P.c);
 for d = 1:length(dataset),
     ll = zeros(1, K);
     for label = 1:K,
-        gaussList = GaussianList(P, G, label);
-        ll(1, label) = logPrior(label) + LogLikelihoodPerPoint(gaussList, ...
-                                                          dataset(d,:,:));
+        ll(1, label) = logPrior(label) + LogLikelihoodPerPoint(P,G, ...
+                                                          dataset,d,label);
     end
-    %    ll
-    log(sum(exp(ll)))
+    llperlabel(d, :) = ll;
     loglikelihood = loglikelihood + log(sum(exp(ll)));
 end
-% for label = 1:K,
-%     ll = zeros(1, length(dataset));
-%     gaussList = GaussianList(P, G, label);
-%     for d = 1:length(dataset),
-%         ll(1, d) = LogLikelihoodPerPoint(gaussList, dataset(d,:,:));
-%     end
-%     llGivenK(1, label) = sum(ll)
-% end
-% logPrior = log(P.c);
-% llMarg = log(sum(exp(logPrior + llGivenK)));
-
-%gaussList = GuassianList(P, G, 1);
-% GaussianList(P,G,1)(4).g
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 end
 
-function ll = LogLikelihoodPerPoint(gaussList, d)
+function ll = LogLikelihoodPerPoint(P, G, dataset, d, label)
 ll = 0;
-for i = 1:size(d,2),
-    for j = 1:size(d,3),
-        newll = lognormpdf(d(1, i, j), ...
-                           gaussList(i).g(j, 1), ...
-                           gaussList(i).g(j, 2));
-        ll = ll + newll;
-    end
-end
-end
-
-function gaussList = GaussianList(P, G, k)
-    P_copy = P;
-    gaussList = repmat(struct('g', []), 1, length(P_copy.clg));
-    for i=1:length(P_copy.clg),
-        [gauss, P_copy] = Gaussian(P_copy,G,i,k);
-        gaussList(1, i).g = gauss;
-    end
-end
-
-function [gauss, P_copy] = Gaussian(P_copy, G, i, k)
-    parent = G(i,2);
-    if (G(i,1) == 0)
-        gauss = [P_copy.clg(i).mu_y(k), P_copy.clg(i).sigma_y(k);...
-                P_copy.clg(i).mu_x(k), P_copy.clg(i).sigma_x(k);...
-                P_copy.clg(i).mu_angle(k), P_copy.clg(i).sigma_angle(k)];
+for i = 1:size(dataset,2),
+    if (length(size(G)) == 3),
+        hasparent = G(i,1,label) == 0;
+        parent = G(i,2, label);
     else
-        paparams = [1, P_copy.clg(parent).mu_y(k), P_copy.clg(parent).mu_x(k), ...
-                    P_copy.clg(parent).mu_angle(k)];
-        mu_y = P_copy.clg(i).theta(k, 1:4) * paparams';
-        mu_x = P_copy.clg(i).theta(k, 5:8) * paparams';
-        mu_angle = P_copy.clg(i).theta(k, 9:12) * paparams';
-        P_copy.clg(i).mu_y(k) = mu_y;
-        P_copy.clg(i).mu_x(k) = mu_x;
-        P_copy.clg(i).mu_angle(k) = mu_angle;
-        gauss = [mu_y, P_copy.clg(i).sigma_y(k);...
-                mu_x, P_copy.clg(i).sigma_x(k);...
-                mu_angle, P_copy.clg(i).sigma_angle(k)];
+        hasparent = G(i,1) == 0;
+        parent = G(i,2);
+    end
+    if(hasparent),
+        ll += lognormpdf(dataset(d,i,1), P.clg(i).mu_y(label), ...
+                         P.clg(i).sigma_y(label));
+        ll += lognormpdf(dataset(d,i,2), P.clg(i).mu_x(label), ...
+                         P.clg(i).sigma_x(label));
+        ll += lognormpdf(dataset(d,i,3), P.clg(i).mu_angle(label), ...
+                         P.clg(i).sigma_angle(label));
+    else
+        paparams = [1, dataset(d,parent,1),dataset(d,parent,2),dataset(d,parent,3)];
+        mu_y = P.clg(i).theta(label, 1:4) * paparams';
+        mu_x = P.clg(i).theta(label, 5:8) * paparams';
+        mu_angle = P.clg(i).theta(label, 9:12) * paparams';
+        ll += lognormpdf(dataset(d,i,1), mu_y, ...
+                         P.clg(i).sigma_y(label));
+        ll += lognormpdf(dataset(d,i,2), mu_x, ...
+                         P.clg(i).sigma_x(label));
+        ll += lognormpdf(dataset(d,i,3), mu_angle, ...
+                         P.clg(i).sigma_angle(label));
     end
 end
+end
+
