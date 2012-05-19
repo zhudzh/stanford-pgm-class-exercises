@@ -158,23 +158,21 @@ for iter=1:maxIter
       factorList = [];
       for a=1:length(actionData(l).marg_ind)
           if(a==1)
-              init = struct('var', [actionData(l).marg_ind(a)], ...
+              init = struct('var', [1], ...
                             'card', [K], 'val', log(P.c));
-              initEmission = BuildEmissionFactor(actionData(l).marg_ind(a), ...
+              initEmission = BuildEmissionFactor(a, actionData(l).marg_ind(a), ...
                                                  logEmissionProb, K);
               factorList = [init initEmission];
           else
-              tran = BuildTransFactor(actionData(l).pair_ind(a-1),...
-                                      actionData(l).marg_ind(a), ...
+              tran = BuildTransFactor(a, ...
                                       P.transMatrix, ...
                                       K);
-              emission = BuildEmissionFactor(actionData(l).marg_ind(a), ...
+              emission = BuildEmissionFactor(a, actionData(l).marg_ind(a), ...
                                                  logEmissionProb, K);
               factorList = [factorList tran emission];
           end
       end
       [M, pCali] = ComputeExactMarginalsHMM(factorList);
-      
   end
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   
@@ -199,12 +197,12 @@ loglikelihood = loglikelihood(1:iter);
 
 end
 
-function f = BuildEmissionFactor(ind, logEmission, K)
-f = struct('var', [ind], 'card', [K], 'val', logEmission(ind, :));
+function f = BuildEmissionFactor(a, ind, logEmission, K)
+f = struct('var', [a], 'card', [K], 'val', logEmission(ind, :));
 end
 
-function f = BuildTransFactor(pre, cur, transMatrix, K)
-f = struct('var', [pre, cur], 'card', [K, K], 'val', log(reshape(transMatrix, ...
+function f = BuildTransFactor(a, transMatrix, K)
+f = struct('var', [a-1, a], 'card', [K, K], 'val', log(reshape(transMatrix, ...
                                                   1, K^2)));
 end
 
