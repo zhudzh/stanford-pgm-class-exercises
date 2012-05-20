@@ -58,7 +58,12 @@ for iter=1:maxIter
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % YOUR CODE HERE
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
-  P.c = sum(ClassProb) ./ sum(sum(ClassProb));
+  % P.c = sum(ClassProb) ./ sum(sum(ClassProb));
+  initState = zeros(L, K);
+  for i=1:L,
+      initState(i,:) = ClassProb(actionData(i).marg_ind(1), :);
+  end
+  P.c = sum(initState) ./ sum(sum(initState));
   P.clg = repmat(struct('mu_y', zeros(1,K), 'mu_x', zeros(1,K), 'mu_angle', zeros(1,K), ...
                       'sigma_y', zeros(1,K), 'sigma_x', zeros(1,K), 'sigma_angle', ...
                       zeros(1,K), 'theta', []), 1, size(poseData, 2));
@@ -115,8 +120,12 @@ for iter=1:maxIter
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % YOUR CODE HERE
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  transVector = sum(PairProb) ./ sum(sum(PairProb));
-  P.transMatrix = reshape(transVector, K, K);
+  transM = reshape(sum(PairProb), K, K);
+  P.transMatrix += transM;
+  for i=1:K,
+      P.transMatrix(i,:) = normalize(P.transMatrix(i,:));
+  end
+  %  P.transMatrix = reshape(transVector, K, K);
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   
     
@@ -173,6 +182,13 @@ for iter=1:maxIter
           end
       end
       [M, pCali] = ComputeExactMarginalsHMM(factorList);
+      for i=1:length(M),
+          ClassProb(actionData(l).marg_ind(i),:) += exp(M(i).val);
+      end
+      for i=1:length(pCali.cliqueList),
+          PairProb(actionData(l).pair_ind(i),:) += NormalizeFromLog(pCali.cliqueList(i).val);
+      end
+      loglikelihood(iter) += logsumexp(pCali.cliqueList(1).val);
   end
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   
@@ -195,6 +211,15 @@ end
 % Remove iterations if we exited early
 loglikelihood = loglikelihood(1:iter);
 
+end
+
+function n = NormalizeFromLog(logValues)
+s = logsumexp(logValues);
+n = exp(logValues .- s);
+end
+
+function n = normalize(v)
+n = v ./ sum(v);
 end
 
 function f = BuildEmissionFactor(a, ind, logEmission, K)
